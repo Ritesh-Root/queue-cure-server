@@ -2,7 +2,7 @@
 
 Real-time clinic token-queue server. Drives two live-synced screens — a **receptionist desk** and a **patient waiting-room display** — over Socket.IO. When the receptionist clicks **Call Next**, every connected screen updates instantly, with no page refresh.
 
-Built for the [Queue Cure '26](https://unstop.com) hackathon. Pairs with the frontend repo [`queue-companion`](https://github.com/Ritesh-Root/queue-companion).
+Built for the [Queue Cure '26](https://unstop.com) hackathon. This is the **backend half** of the system — it pairs with the frontend repo **[queue-companion](https://github.com/Ritesh-Root/queue-companion)** (the `/reception` and `/patient` screens).
 
 - **Stack:** Node.js + Express + Socket.IO (ESM)
 - **State:** in-memory single source of truth, with synchronous JSON persistence
@@ -121,6 +121,38 @@ All optional — see [`.env.example`](.env.example).
 | `DATA_FILE` | `./data/queue.json` | Persistence file. |
 | `HEARTBEAT_MS` | `10000` | State re-broadcast cadence. |
 | `AVG_DEFAULT_MINUTES` | `8` | Seed consult time before real data exists. |
+
+---
+
+## Deploy
+
+The server reads `PORT` from the environment (most platforms inject it) and is fully
+configured via env vars, so it runs on any container host (Render, Railway, Fly.io, etc.).
+
+### Docker
+
+```bash
+docker build -t queue-cure-server .
+docker run -p 3000:3000 \
+  -e CORS_ORIGINS="https://your-frontend.example" \
+  -e RECEPTION_KEY="choose-a-secret" \
+  -v queue-data:/app/data \
+  queue-cure-server
+```
+
+The `-v queue-data:/app/data` volume keeps the queue across restarts (the image is
+verified to build and serve `/health` out of the box).
+
+### Connecting the deployed frontend
+
+Two settings must agree:
+
+1. **Backend** `CORS_ORIGINS` must include the frontend's deployed origin (e.g.
+   `https://queue-companion.vercel.app`).
+2. **Frontend** `VITE_SERVER_URL` must point at the deployed backend URL.
+
+For any public deployment, also set **`RECEPTION_KEY`** so only staff can drive the queue
+(the frontend then needs to send `{ key }` in `reception:join`).
 
 ---
 
